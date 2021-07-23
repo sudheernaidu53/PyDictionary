@@ -166,6 +166,45 @@ class PyDictionary(object):
                 if disable_errors == False:
                     print("Error: The Following Error occured: %s" % e)
 
+    @staticmethod
+    def meaning_and_usage(term, min_length= 5, disable_errors=False):
+        """
+        :param term: The word we are looking for meanings and usages
+        :param min_length: minimum length (words)of the sentence to filter on. min letters in a meaning to filter on
+        :param disable_errors:  if False, print errors if there is some error
+        :return: returns a dictionary with keys begin (noun, verb). One with meanings and other with usages
+        """
+        if len(term.split()) > 1:
+            print("Error: A Term must be only a single word")
+        else:
+            try:
+                html = _get_soup_object("http://wordnetweb.princeton.edu/perl/webwn?s={0}".format(
+                    term))
+                types = html.findAll("h3")
+                length = len(types)
+                lists = html.findAll("ul")
+                mean_out = {}
+                usage_out = []
+                for a in types:
+                    reg = str(lists[types.index(a)])
+                    meanings = []
+                    for x in re.findall(r'\((.*?)\)', reg):
+                        if 'often followed by' in x:
+                            pass
+                        elif len(x) > min_length or ' ' in str(x):
+                            meanings.append(x)
+                    for x in re.findall(r"<i>\"(.*?)\"", reg):
+                        if 'often followed by' in x:
+                            pass
+                        elif len(x) > min_length and term in str(x):
+                            usage_out.append(x)
+                    name = a.text
+                    mean_out[name] = meanings
+                return mean_out, usage_out
+            except Exception as e:
+                if disable_errors == False:
+                    print("Error: The Following Error occured: %s" % e)
+
 if __name__ == '__main__':
     d = PyDictionary('honest','happy')
     d.printSynonyms()
